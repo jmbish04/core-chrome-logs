@@ -1,0 +1,5 @@
+.agents/ecosystem
+AGENTS.md
+scripts/gh.mjs
+scripts/reui.mjs
+scripts/ui-guard.mjs
