@@ -6,9 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-icons.mjs && vite build && esbuild src/background/index.ts --bundle --outfile=dist/background.js --target=chrome110 --format=esm"
+    "build": "node scripts/ui-guard.mjs && node scripts/generate-icons.mjs && vite build && esbuild src/background/index.ts --bundle --outfile=dist/background.js --target=chrome110 --format=esm",
+    "ui-guard": "node scripts/ui-guard.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.49.0",

@@ -1,33 +1,64 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  FileText,
   AlertTriangle,
   Bug,
-  Copy,
   Check,
-  RefreshCw,
-  Search,
-  CheckCircle2,
-  Trash2,
-  Flame,
   ChevronDown,
   ChevronUp,
-  Settings,
+  Copy,
+  FileText,
+  Flame,
+  RefreshCw,
+  Search,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
-import { Frame, FrameHeader, FrameTitle, FramePanel } from "../components/reui/frame";
+import { AppHeader } from "../components/app-header";
 import { Badge } from "../components/reui/badge";
+import { EmptyState } from "../components/reui/empty-state";
+import { Frame, FrameHeader, FramePanel, FrameTitle } from "../components/reui/frame";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { EmptyState } from "../components/reui/empty-state";
-import { StoredWorkerError } from "../background";
-import { getLogsSettings } from "../utils/config";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import type { StoredWorkerError } from "../background";
+
+type LevelFilter = "all" | "error" | "warn";
+
+const ALL_WORKERS = "all";
+
+const shortWorker = (worker: string) => worker.replace("colby-", "").replace("core-", "");
+
+/**
+ * One stack trace, in the panel's own surface tokens.
+ *
+ * ReUI's CodeBlock would also fit here and was considered; it pulls Shiki plus ~3,400
+ * lines of highlighting machinery into a 400px panel that shows one monospace trace with
+ * no language to highlight. The trace is pre-formatted text, so the Frame carries it.
+ */
+function TraceBlock({ label, content }: { label?: string; content: string }) {
+  return (
+    <Frame variant="inverse" spacing="dense">
+      {label && (
+        <FrameHeader className="px-2.5 py-1.5">
+          <FrameTitle className="text-[10px] font-semibold text-muted-foreground">
+            {label}
+          </FrameTitle>
+        </FrameHeader>
+      )}
+      <FramePanel className="bg-muted/40 p-2.5">
+        <pre className="overflow-x-auto font-mono text-[10px] leading-relaxed whitespace-pre text-muted-foreground select-text">
+          {content}
+        </pre>
+      </FramePanel>
+    </Frame>
+  );
+}
 
 export default function Sidepanel() {
   const [logs, setLogs] = useState<StoredWorkerError[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWorker, setSelectedWorker] = useState<string>("all");
-  const [levelFilter, setLevelFilter] = useState<"all" | "error" | "warn">("all");
+  const [selectedWorker, setSelectedWorker] = useState<string>(ALL_WORKERS);
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedTraceId, setExpandedTraceId] = useState<string | null>("err-1");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -49,7 +80,7 @@ export default function Sidepanel() {
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      if (selectedWorker !== "all" && log.worker !== selectedWorker) return false;
+      if (selectedWorker !== ALL_WORKERS && log.worker !== selectedWorker) return false;
       if (levelFilter === "error" && log.level !== "error") return false;
       if (levelFilter === "warn" && log.level !== "warn" && log.level !== "error") return false;
       if (searchQuery.trim()) {
@@ -65,7 +96,10 @@ export default function Sidepanel() {
   }, [logs, selectedWorker, levelFilter, searchQuery]);
 
   const allErrors = useMemo(() => logs.filter((l) => l.level === "error"), [logs]);
-  const filteredErrors = useMemo(() => filteredLogs.filter((l) => l.level === "error"), [filteredLogs]);
+  const filteredErrors = useMemo(
+    () => filteredLogs.filter((l) => l.level === "error"),
+    [filteredLogs]
+  );
 
   const formatErrorBlock = (err: StoredWorkerError, index?: number) => {
     const numPrefix = index !== undefined ? `${index + 1}. ` : "";
@@ -128,8 +162,7 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
   };
 
   const handleCopySingleError = (err: StoredWorkerError) => {
-    const text = formatErrorBlock(err);
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(formatErrorBlock(err));
   };
 
   const handleSimulateNewError = () => {
@@ -166,223 +199,172 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
   const uniqueWorkersList = Array.from(new Set(logs.map((l) => l.worker)));
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground select-text">
-      {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-card/60 backdrop-blur-xs shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center shadow-xs">
-            <Flame className="w-4 h-4 text-orange-400" />
-          </div>
-          <div>
-            <h1 className="font-semibold text-xs leading-tight tracking-tight text-foreground flex items-center gap-1.5">
-              Workers Logs Inspector
-              <Badge variant="primary-light" size="xs" radius="full">
-                ReUI Monolith
-              </Badge>
-            </h1>
-            <p className="text-[10px] text-muted-foreground">Ecosystem Observability & Traces</p>
-          </div>
-        </div>
+    <div className="flex h-screen flex-col bg-background text-foreground select-text">
+      <AppHeader
+        icon={<Flame />}
+        title="Workers Logs Inspector"
+        subtitle="Ecosystem observability & traces"
+        tag="ReUI"
+        actions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={loadErrors}
+            aria-label="Reload errors"
+            title="Reload errors"
+          >
+            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        }
+      />
 
-        <button
-          type="button"
-          onClick={() => chrome.runtime.openOptionsPage()}
-          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"
-          title="Settings"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Top Header Card */}
-        <Frame variant="default" spacing="sm">
-          <FrameHeader>
-            <div className="flex items-center justify-between">
-              <FrameTitle className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-foreground" />
-                <span>Workers Console & Traces</span>
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        <Frame variant="default" spacing="dense">
+          <FrameHeader className="px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <FrameTitle className="flex items-center gap-2 text-xs">
+                <FileText className="size-4" />
+                <span>Workers console & traces</span>
               </FrameTitle>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1.5">
                 <Badge
                   variant={allErrors.length > 0 ? "destructive-light" : "success-light"}
                   size="xs"
                   radius="full"
                 >
-                  {allErrors.length} {allErrors.length === 1 ? "Error" : "Errors"}
+                  {allErrors.length} {allErrors.length === 1 ? "error" : "errors"}
                 </Badge>
                 <Badge variant="outline" size="xs" radius="full">
-                  {logs.length} Total Logs
+                  {logs.length} total logs
                 </Badge>
               </div>
             </div>
           </FrameHeader>
 
-          <FramePanel className="space-y-3 p-3 bg-card/60">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Real-time exception streams and execution traces across all Cloudflare Workers. One click copies all formatted stack traces directly for your AI coding agent to generate instantaneous fixes.
+          <FramePanel className="space-y-3 bg-card/60 p-3">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Real-time exception streams and execution traces across all Cloudflare Workers.
+              One click copies every formatted stack trace for your coding agent.
             </p>
 
-            {/* Primary Action Button: Copy All Errors Block */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2">
               <Button
+                type="button"
                 variant={allErrors.length > 0 ? "default" : "secondary"}
                 size="sm"
                 onClick={handleCopyAllErrors}
                 disabled={allErrors.length === 0}
-                className="flex-1 text-xs gap-1.5 font-semibold"
+                className="flex-1 gap-1.5 font-semibold"
               >
                 {copiedAll ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Copied All Errors to Clipboard!</span>
+                    <Check className="size-3.5" />
+                    <span>Copied all errors</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy All Errors Across All Workers ({filteredErrors.length})</span>
+                    <Copy className="size-3.5" />
+                    <span>Copy all errors ({filteredErrors.length})</span>
                   </>
                 )}
               </Button>
 
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleSimulateNewError}
-                className="text-xs gap-1 px-2.5"
-                title="Inject test error to verify copy block"
+                className="gap-1"
+                title="Inject a test error to verify the copy block"
               >
-                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <Flame className="size-3.5" />
                 <span>Simulate</span>
               </Button>
 
               <Button
+                type="button"
                 variant="outline"
-                size="sm"
+                size="icon-sm"
                 onClick={handleClearLogs}
-                className="text-xs px-2"
+                aria-label="Clear log history"
                 title="Clear log history"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="size-3.5" />
               </Button>
             </div>
           </FramePanel>
         </Frame>
 
-        {/* Search & Filter Bar */}
-        <div className="space-y-2">
+        <Frame variant="default" spacing="sm">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search error message, route, or stack trace..."
-              className="pl-8 text-xs h-8 bg-card"
+              placeholder="Search message, route, or stack trace..."
+              aria-label="Search logs"
+              className="h-8 bg-card pl-8 text-xs"
             />
           </div>
 
-          {/* Worker Pills Filter */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-            <button
-              type="button"
-              onClick={() => setSelectedWorker("all")}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors shrink-0 cursor-pointer ${
-                selectedWorker === "all"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              All Workers ({logs.length})
-            </button>
-            {uniqueWorkersList.map((w) => {
-              const count = logs.filter((l) => l.worker === w && l.level === "error").length;
+          <ToggleGroup
+            value={[selectedWorker]}
+            onValueChange={(next) => setSelectedWorker(next[0] ?? ALL_WORKERS)}
+            size="sm"
+            spacing={1}
+            aria-label="Filter by worker"
+            className="no-scrollbar w-full flex-nowrap overflow-x-auto"
+          >
+            <ToggleGroupItem value={ALL_WORKERS}>All workers ({logs.length})</ToggleGroupItem>
+            {uniqueWorkersList.map((worker) => {
+              const count = logs.filter((l) => l.worker === worker && l.level === "error").length;
               return (
-                <button
-                  key={w}
-                  type="button"
-                  onClick={() => setSelectedWorker(w)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors shrink-0 flex items-center gap-1 cursor-pointer ${
-                    selectedWorker === w
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>{w.replace("colby-", "").replace("core-", "")}</span>
+                <ToggleGroupItem key={worker} value={worker}>
+                  <span>{shortWorker(worker)}</span>
                   {count > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center font-bold">
+                    <Badge variant="destructive" size="xs" radius="full">
                       {count}
-                    </span>
+                    </Badge>
                   )}
-                </button>
+                </ToggleGroupItem>
               );
             })}
-          </div>
+          </ToggleGroup>
 
-          {/* Severity Filter */}
-          <div className="flex items-center justify-between text-xs pt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-[11px]">Severity:</span>
-              <button
-                type="button"
-                onClick={() => setLevelFilter("all")}
-                className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
-                  levelFilter === "all"
-                    ? "bg-card border border-border text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => setLevelFilter("error")}
-                className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
-                  levelFilter === "error"
-                    ? "bg-destructive/20 border border-destructive/40 text-destructive-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Errors Only
-              </button>
-              <button
-                type="button"
-                onClick={() => setLevelFilter("warn")}
-                className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
-                  levelFilter === "warn"
-                    ? "bg-warning/20 border border-warning/40 text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Warnings
-              </button>
-            </div>
+          <div className="flex items-center justify-between gap-2">
+            <ToggleGroup
+              value={[levelFilter]}
+              onValueChange={(next) => setLevelFilter((next[0] as LevelFilter) ?? "all")}
+              size="sm"
+              spacing={0}
+              variant="outline"
+              aria-label="Filter by severity"
+            >
+              <ToggleGroupItem value="all">All</ToggleGroupItem>
+              <ToggleGroupItem value="error">Errors</ToggleGroupItem>
+              <ToggleGroupItem value="warn">Warnings</ToggleGroupItem>
+            </ToggleGroup>
 
-            <span className="text-[11px] text-muted-foreground">
+            <span className="shrink-0 text-[11px] text-muted-foreground">
               Showing {filteredLogs.length} of {logs.length}
             </span>
           </div>
-        </div>
+        </Frame>
 
-        {/* Logs Stream List */}
         {filteredLogs.length === 0 ? (
           <EmptyState
-            icon={<ShieldCheck className="w-6 h-6 text-emerald-400" />}
-            title="No Errors Found"
+            icon={<ShieldCheck className="size-6 text-success" />}
+            title="No errors found"
             description={
               searchQuery
                 ? `No logs match "${searchQuery}". Try clearing the search query.`
-                : "All monitored Cloudflare Workers are currently running without active exceptions."
+                : "All monitored Cloudflare Workers are running without active exceptions."
             }
             action={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSimulateNewError}
-                className="text-xs"
-              >
-                Inject Test Error
+              <Button type="button" variant="outline" size="sm" onClick={handleSimulateNewError}>
+                Inject test error
               </Button>
             }
           />
@@ -397,37 +379,43 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
                 <Frame
                   key={log.id}
                   variant="default"
-                  spacing="sm"
-                  className={`transition-colors ${
-                    isError ? "border-destructive/40" : isWarn ? "border-amber-500/30" : "border-border"
-                  }`}
+                  spacing="dense"
+                  className={
+                    isError
+                      ? "border-destructive/40"
+                      : isWarn
+                        ? "border-warning/40"
+                        : "border-border"
+                  }
                 >
-                  <FrameHeader className="py-2 px-3 bg-card/70">
+                  <FrameHeader className="bg-card/70 px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex min-w-0 items-center gap-1.5">
                         {isError ? (
-                          <Bug className="w-3.5 h-3.5 text-destructive shrink-0" />
+                          <Bug className="size-3.5 shrink-0 text-destructive" />
                         ) : isWarn ? (
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <AlertTriangle className="size-3.5 shrink-0 text-warning" />
                         ) : (
-                          <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <FileText className="size-3.5 shrink-0 text-muted-foreground" />
                         )}
 
                         <Badge
-                          variant={isError ? "destructive-light" : isWarn ? "warning-light" : "outline"}
+                          variant={
+                            isError ? "destructive-light" : isWarn ? "warning-light" : "outline"
+                          }
                           size="xs"
                           radius="full"
                         >
                           {log.worker}
                         </Badge>
 
-                        <span className="text-[10px] font-mono text-muted-foreground truncate">
+                        <span className="truncate font-mono text-[10px] text-muted-foreground">
                           {log.route}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className="text-[10px] font-mono text-muted-foreground">
+                      <div className="flex shrink-0 items-center gap-1">
+                        <span className="font-mono text-[10px] text-muted-foreground">
                           {new Date(log.timestamp).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -436,88 +424,84 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
                         </span>
 
                         <Button
+                          type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon-xs"
                           onClick={() => handleCopyWorkerErrors(log.worker)}
-                          className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Copy all errors for ${log.worker}`}
                           title={`Copy all errors for ${log.worker}`}
                         >
                           {copiedWorkerMap[log.worker] ? (
-                            <Check className="w-3 h-3 text-emerald-400" />
+                            <Check className="size-3" />
                           ) : (
-                            <Copy className="w-3 h-3" />
+                            <Copy className="size-3" />
                           )}
                         </Button>
                       </div>
                     </div>
                   </FrameHeader>
 
-                  <FramePanel className="p-3 space-y-2 bg-card/30">
-                    {/* Error Message */}
+                  <FramePanel className="space-y-2 bg-card/30 p-3">
                     <div className="flex items-start justify-between gap-2">
-                      <p
-                        className={`text-xs font-medium leading-relaxed font-mono ${
-                          isError ? "text-destructive-foreground" : "text-foreground"
-                        }`}
-                      >
+                      <p className="font-mono text-xs leading-relaxed font-medium text-foreground">
                         {log.message}
                       </p>
 
                       <Badge
                         variant={isError ? "destructive" : isWarn ? "warning-light" : "outline"}
                         size="xs"
+                        className="shrink-0"
                       >
                         HTTP {log.status}
                       </Badge>
                     </div>
 
-                    {/* Context & Ray ID */}
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono pt-1 border-t border-border/40">
-                      <span>Ray: {log.rayId}</span>
+                    <div className="flex items-center justify-between gap-2 border-t border-border pt-1.5">
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        Ray: {log.rayId}
+                      </span>
                       {log.stack && (
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="xs"
                           onClick={() => setExpandedTraceId(isExpanded ? null : log.id)}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
+                          aria-expanded={isExpanded}
                         >
-                          <span>{isExpanded ? "Hide Stack Trace" : "View Stack Trace"}</span>
+                          <span>{isExpanded ? "Hide stack trace" : "View stack trace"}</span>
                           {isExpanded ? (
-                            <ChevronUp className="w-3 h-3" />
+                            <ChevronUp className="ml-0.5 size-3" />
                           ) : (
-                            <ChevronDown className="w-3 h-3" />
+                            <ChevronDown className="ml-0.5 size-3" />
                           )}
-                        </button>
+                        </Button>
                       )}
                     </div>
 
-                    {/* Expandable Stack Trace */}
                     {isExpanded && log.stack && (
-                      <div className="mt-2 space-y-1.5">
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                          <span className="font-semibold">Exception Stack Trace</span>
-                          <button
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-semibold text-muted-foreground">
+                            Exception stack trace
+                          </span>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="xs"
                             onClick={() => handleCopySingleError(log)}
-                            className="hover:text-foreground flex items-center gap-1 cursor-pointer"
                           >
-                            <Copy className="w-2.5 h-2.5" />
-                            <span>Copy Trace</span>
-                          </button>
+                            <Copy className="mr-1 size-2.5" />
+                            <span>Copy trace</span>
+                          </Button>
                         </div>
 
-                        <pre className="p-2.5 bg-background border border-border rounded-md text-[10px] font-mono text-muted-foreground overflow-x-auto whitespace-pre leading-relaxed select-text">
-                          {log.stack}
-                        </pre>
+                        <TraceBlock content={log.stack} />
 
                         {log.context && (
-                          <div className="pt-1">
-                            <span className="text-[10px] font-semibold text-muted-foreground block mb-0.5">
-                              Request Context
-                            </span>
-                            <pre className="p-2 bg-background/50 border border-border/60 rounded text-[10px] font-mono text-muted-foreground overflow-x-auto">
-                              {JSON.stringify(log.context, null, 2)}
-                            </pre>
-                          </div>
+                          <TraceBlock
+                            label="Request context"
+                            content={JSON.stringify(log.context, null, 2)}
+                          />
                         )}
                       </div>
                     )}
