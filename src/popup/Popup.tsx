@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-  FileText,
-  Copy,
+  Bug,
   Check,
-  Sidebar,
+  Copy,
   ExternalLink,
   Flame,
-  Bug,
+  PanelRight,
   RefreshCw,
-  Settings,
-  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
-import { Frame, FrameHeader, FrameTitle, FramePanel } from "../components/reui/frame";
+import { AppHeader } from "../components/app-header";
 import { Badge } from "../components/reui/badge";
-import { Button } from "../components/ui/button";
 import { EmptyState } from "../components/reui/empty-state";
-import { StoredWorkerError } from "../background";
+import { Frame, FramePanel } from "../components/reui/frame";
+import { Button } from "../components/ui/button";
+import { Separator } from "../components/ui/separator";
+import type { StoredWorkerError } from "../background";
+
+const shortWorker = (worker: string) => worker.replace("colby-", "").replace("core-", "");
 
 export default function Popup() {
   const [errors, setErrors] = useState<StoredWorkerError[]>([]);
@@ -58,143 +60,122 @@ export default function Popup() {
   const uniqueWorkers = Array.from(new Set(errors.map((e) => e.worker)));
 
   return (
-    <div className="flex flex-col bg-background text-foreground min-h-[460px] w-84 select-none">
-      {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-card/60 backdrop-blur-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center shadow-xs">
-            <Flame className="w-4 h-4 text-orange-400" />
-          </div>
-          <div>
-            <h1 className="font-semibold text-xs leading-tight tracking-tight text-foreground flex items-center gap-1.5">
-              Workers Logs
-              <Badge variant="primary-light" size="xs" radius="full">
-                ReUI
-              </Badge>
-            </h1>
-            <p className="text-[10px] text-muted-foreground">Cloudflare Observability</p>
-          </div>
-        </div>
+    <div className="flex min-h-[460px] w-84 flex-col bg-background text-foreground select-none">
+      <AppHeader
+        icon={<Flame />}
+        title="Workers Logs"
+        subtitle="Cloudflare observability"
+        tag="ReUI"
+      />
 
-        <button
-          type="button"
-          onClick={() => chrome.runtime.openOptionsPage()}
-          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"
-          title="Settings"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Overview Status Badges */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-muted/20 text-[11px]">
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-4 py-2">
         <Badge
           variant={errorItems.length > 0 ? "destructive-light" : "success-light"}
           size="xs"
           radius="full"
         >
-          {errorItems.length > 0 ? `${errorItems.length} Active Errors` : "All Workers Healthy"}
+          {errorItems.length > 0
+            ? `${errorItems.length} active ${errorItems.length === 1 ? "error" : "errors"}`
+            : "All workers healthy"}
         </Badge>
 
         <Badge variant="outline" size="xs" radius="full">
-          {uniqueWorkers.length} Monitored
+          {uniqueWorkers.length} monitored
         </Badge>
       </div>
 
-      {/* Primary Action Button: Copy All Errors Block */}
-      <div className="p-3 space-y-2.5 flex-1 overflow-y-auto">
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
         <Button
+          type="button"
           onClick={handleCopyAll}
           variant={errorItems.length > 0 ? "default" : "secondary"}
           size="sm"
-          className="w-full justify-between h-auto py-2.5 px-3"
+          className="h-auto w-full justify-between px-3 py-2.5"
           disabled={errorItems.length === 0}
         >
-          <div className="flex items-center gap-2">
-            {copiedAll ? (
-              <Check className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <Copy className="w-4 h-4" />
-            )}
-            <div className="text-left">
-              <div className="text-xs font-semibold">
-                {copiedAll ? "Copied All to Clipboard!" : "Copy All Errors for Agent"}
-              </div>
-              <div className="text-[10px] opacity-80 font-normal">
+          <span className="flex items-center gap-2">
+            {copiedAll ? <Check className="size-4" /> : <Copy className="size-4" />}
+            <span className="text-left">
+              <span className="block text-xs font-semibold">
+                {copiedAll ? "Copied all to clipboard" : "Copy all errors for agent"}
+              </span>
+              <span className="block text-xs font-normal opacity-80">
                 Formatted markdown block with traces
-              </div>
-            </div>
-          </div>
+              </span>
+            </span>
+          </span>
           <Badge
-            variant="outline"
+            variant={errorItems.length > 0 ? "secondary" : "outline"}
             size="xs"
             radius="full"
-            className="bg-background/20 border-border/40"
           >
             {errorItems.length}
           </Badge>
         </Button>
 
-        {/* Side Panel Shortcut */}
         <Button
+          type="button"
           onClick={handleOpenSidepanel}
           variant="outline"
           size="sm"
-          className="w-full justify-between text-xs"
+          className="w-full justify-between"
         >
-          <div className="flex items-center gap-1.5">
-            <Sidebar className="w-3.5 h-3.5" />
-            <span>Open Side Panel Inspector</span>
-          </div>
+          <span className="flex items-center gap-1.5">
+            <PanelRight className="size-3.5" />
+            <span>Open side panel inspector</span>
+          </span>
           <Badge variant="outline" size="xs">
             ⌘+Shift+L
           </Badge>
         </Button>
 
-        {/* Recent Error Previews */}
-        <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium px-1">
-            <span>Recent Worker Exceptions</span>
-            <button
+        <Separator />
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              Recent worker exceptions
+            </span>
+            <Button
               type="button"
               onClick={loadErrors}
-              className="hover:text-foreground flex items-center gap-1 cursor-pointer"
+              variant="ghost"
+              size="xs"
+              aria-label="Reload errors"
             >
-              <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
-              <span>Refresh</span>
-            </button>
+              <RefreshCw className={`size-3 ${loading ? "animate-spin" : ""}`} />
+              <span className="ml-1">Refresh</span>
+            </Button>
           </div>
 
           {errorItems.length === 0 ? (
             <EmptyState
-              icon={<ShieldAlert className="w-6 h-6 text-emerald-400" />}
-              title="No Errors Recorded"
+              icon={<ShieldCheck className="size-6 text-success" />}
+              title="No errors recorded"
               description="Your Cloudflare Workers ecosystem is healthy."
             />
           ) : (
             <div className="space-y-1.5">
               {errorItems.slice(0, 3).map((err) => (
-                <Frame key={err.id} variant="default" spacing="sm">
-                  <FramePanel className="p-2.5 space-y-1 bg-card/60">
+                <Frame key={err.id} variant="default" spacing="dense">
+                  <FramePanel className="space-y-1 bg-card/60 p-2.5">
                     <div className="flex items-center justify-between gap-1.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Bug className="w-3.5 h-3.5 text-destructive shrink-0" />
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <Bug className="size-3.5 shrink-0 text-destructive" />
                         <Badge variant="destructive-light" size="xs" radius="full">
-                          {err.worker.replace("colby-", "").replace("core-", "")}
+                          {shortWorker(err.worker)}
                         </Badge>
                       </div>
-                      <span className="text-[10px] font-mono text-muted-foreground">
+                      <Badge variant="outline" size="xs">
                         HTTP {err.status}
-                      </span>
+                      </Badge>
                     </div>
 
-                    <p className="text-[11px] font-mono text-destructive-foreground truncate">
-                      {err.message}
-                    </p>
+                    <p className="truncate font-mono text-xs text-foreground">{err.message}</p>
 
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
-                      <span className="truncate max-w-[170px]">{err.route}</span>
-                      <span>
+                    <div className="flex items-center justify-between gap-2 font-mono text-xs text-muted-foreground">
+                      <span className="truncate">{err.route}</span>
+                      <span className="shrink-0">
                         {new Date(err.timestamp).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -209,18 +190,13 @@ export default function Popup() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-3 py-2 border-t border-border text-[10px] text-muted-foreground flex items-center justify-between bg-card/40">
-        <span>Cloudflare Observability</span>
-        <button
-          type="button"
-          onClick={handleOpenSidepanel}
-          className="hover:text-foreground flex items-center gap-0.5 cursor-pointer"
-        >
-          <span>Full Inspector</span>
-          <ExternalLink className="w-2.5 h-2.5" />
-        </button>
-      </div>
+      <footer className="flex items-center justify-between border-t border-border bg-card/40 px-3 py-1.5">
+        <span className="text-xs text-muted-foreground">Cloudflare observability</span>
+        <Button type="button" onClick={handleOpenSidepanel} variant="link" size="xs">
+          <span>Full inspector</span>
+          <ExternalLink className="ml-0.5 size-2.5" />
+        </Button>
+      </footer>
     </div>
   );
 }

@@ -24,6 +24,7 @@ export interface TagInputProps {
   description?: string;
   icon?: React.ReactNode;
   className?: string;
+  emptyText?: string;
 }
 
 export function TagInput({
@@ -35,6 +36,7 @@ export function TagInput({
   description,
   icon,
   className,
+  emptyText = "No domains configured",
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export function TagInput({
         {/* Rendered Badges Grid */}
         <div className="flex flex-wrap items-center gap-1.5 min-h-[26px]">
           {tags.length === 0 ? (
-            <span className="text-xs text-muted-foreground italic">No domains configured</span>
+            <span className="text-xs text-muted-foreground italic">{emptyText}</span>
           ) : (
             tags.map((tag) => (
               <Badge
