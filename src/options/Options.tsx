@@ -132,7 +132,7 @@ export default function Options() {
                     <div className="text-xs font-semibold">
                       Critical exceptions and 500 errors
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       Raises a native notification with a "Copy error for agent" action
                     </div>
                   </div>
@@ -147,7 +147,7 @@ export default function Options() {
                 <div className="flex items-center justify-between gap-4 pt-3">
                   <div>
                     <div className="text-xs font-semibold">Warnings and 4xx errors</div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       Covers rate limits (429) and high latency (over 3,500&nbsp;ms)
                     </div>
                   </div>
@@ -199,7 +199,7 @@ export default function Options() {
                     max={300}
                     step={5}
                   />
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     How often the extension checks for new exceptions and refreshes the toolbar
                     badge.
                   </p>

@@ -99,7 +99,7 @@ export default function Popup() {
               <span className="block text-xs font-semibold">
                 {copiedAll ? "Copied all to clipboard" : "Copy all errors for agent"}
               </span>
-              <span className="block text-[10px] font-normal opacity-80">
+              <span className="block text-xs font-normal opacity-80">
                 Formatted markdown block with traces
               </span>
             </span>
@@ -133,7 +133,7 @@ export default function Popup() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-xs font-medium text-muted-foreground">
               Recent worker exceptions
             </span>
             <Button
@@ -171,11 +171,11 @@ export default function Popup() {
                       </Badge>
                     </div>
 
-                    <p className="truncate font-mono text-[11px] text-foreground">{err.message}</p>
+                    <p className="truncate font-mono text-xs text-foreground">{err.message}</p>
 
-                    <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground">
-                      <span className="max-w-[170px] truncate">{err.route}</span>
-                      <span>
+                    <div className="flex items-center justify-between gap-2 font-mono text-xs text-muted-foreground">
+                      <span className="truncate">{err.route}</span>
+                      <span className="shrink-0">
                         {new Date(err.timestamp).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -191,7 +191,7 @@ export default function Popup() {
       </div>
 
       <footer className="flex items-center justify-between border-t border-border bg-card/40 px-3 py-1.5">
-        <span className="text-[10px] text-muted-foreground">Cloudflare observability</span>
+        <span className="text-xs text-muted-foreground">Cloudflare observability</span>
         <Button type="button" onClick={handleOpenSidepanel} variant="link" size="xs">
           <span>Full inspector</span>
           <ExternalLink className="ml-0.5 size-2.5" />

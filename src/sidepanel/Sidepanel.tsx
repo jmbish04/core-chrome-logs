@@ -40,13 +40,13 @@ function TraceBlock({ label, content }: { label?: string; content: string }) {
     <Frame variant="inverse" spacing="dense">
       {label && (
         <FrameHeader className="px-2.5 py-1.5">
-          <FrameTitle className="text-[10px] font-semibold text-muted-foreground">
+          <FrameTitle className="text-xs font-semibold text-muted-foreground">
             {label}
           </FrameTitle>
         </FrameHeader>
       )}
       <FramePanel className="bg-muted/40 p-2.5">
-        <pre className="overflow-x-auto font-mono text-[10px] leading-relaxed whitespace-pre text-muted-foreground select-text">
+        <pre className="overflow-x-auto font-mono text-xs leading-relaxed whitespace-pre text-muted-foreground select-text">
           {content}
         </pre>
       </FramePanel>
@@ -347,7 +347,7 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
               <ToggleGroupItem value="warn">Warnings</ToggleGroupItem>
             </ToggleGroup>
 
-            <span className="shrink-0 text-[11px] text-muted-foreground">
+            <span className="shrink-0 text-xs text-muted-foreground">
               Showing {filteredLogs.length} of {logs.length}
             </span>
           </div>
@@ -409,13 +409,10 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
                           {log.worker}
                         </Badge>
 
-                        <span className="truncate font-mono text-[10px] text-muted-foreground">
-                          {log.route}
-                        </span>
                       </div>
 
                       <div className="flex shrink-0 items-center gap-1">
-                        <span className="font-mono text-[10px] text-muted-foreground">
+                        <span className="font-mono text-xs text-muted-foreground">
                           {new Date(log.timestamp).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -439,6 +436,10 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
                         </Button>
                       </div>
                     </div>
+
+                    <div className="truncate font-mono text-xs text-muted-foreground">
+                      {log.route}
+                    </div>
                   </FrameHeader>
 
                   <FramePanel className="space-y-2 bg-card/30 p-3">
@@ -457,7 +458,7 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
                     </div>
 
                     <div className="flex items-center justify-between gap-2 border-t border-border pt-1.5">
-                      <span className="font-mono text-[10px] text-muted-foreground">
+                      <span className="font-mono text-xs text-muted-foreground">
                         Ray: {log.rayId}
                       </span>
                       {log.stack && (
@@ -481,7 +482,7 @@ ${workerErrors.map((err, idx) => formatErrorBlock(err, idx)).join("\n\n---\n\n")
                     {isExpanded && log.stack && (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-semibold text-muted-foreground">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             Exception stack trace
                           </span>
                           <Button
