@@ -111,13 +111,13 @@ export function TagInput({
               <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
                 {icon || <Globe className="w-3.5 h-3.5 text-muted-foreground" />}
                 {label}
-                <span className="text-[10px] text-muted-foreground font-mono font-normal">
+                <span className="text-xs text-muted-foreground font-mono font-normal">
                   ({tags.length})
                 </span>
               </label>
             )}
             {description && (
-              <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{description}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{description}</p>
             )}
           </div>
 
@@ -125,7 +125,7 @@ export function TagInput({
             <button
               type="button"
               onClick={() => onChange([])}
-              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
             >
               Clear all
             </button>
@@ -148,7 +148,7 @@ export function TagInput({
                 radius="full"
                 dismissible
                 onDismiss={() => handleRemove(tag)}
-                className="font-mono text-[10px]"
+                className="font-mono text-xs"
               >
                 {tag}
               </Badge>
@@ -173,7 +173,7 @@ export function TagInput({
             type="button"
             onClick={() => handleAdd()}
             disabled={!inputValue.trim()}
-            className="px-2.5 py-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 border border-border/50 rounded-md text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer"
+            className="px-2.5 py-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 border border-border/50 rounded-md text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
           >
             <Plus className="w-3 h-3" />
             <span>Add</span>
@@ -182,7 +182,7 @@ export function TagInput({
       </div>
 
       {error && (
-        <p className="text-[10px] text-destructive font-medium px-1">
+        <p className="text-xs text-destructive font-medium px-1">
           {error}
         </p>
       )}
