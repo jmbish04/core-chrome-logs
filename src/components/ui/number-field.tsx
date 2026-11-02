@@ -101,12 +101,12 @@ export function NumberField({
       </div>
 
       {description && (
-        <p className="text-[11px] text-muted-foreground select-none leading-relaxed">
+        <p className="text-xs text-muted-foreground select-none leading-relaxed">
           {description}
         </p>
       )}
       {error && (
-        <p className="text-[10px] text-destructive font-medium select-none">
+        <p className="text-xs text-destructive font-medium select-none">
           {error}
         </p>
       )}
